@@ -17,6 +17,11 @@
     --accent:#0f6e56;
     --accent-light:#e1f5ee;
     --accent-dark:#085041;
+    --th-navy:#14123a;
+    --th-purple:#4b2e75;
+    --th-indigo:#4f4aa5;
+    --th-pink:#c964ab;
+    --th-lav:#f7f2fa;
   }
   *{margin:0;padding:0;box-sizing:border-box;}
   body{
@@ -136,6 +141,22 @@
     color:var(--accent-dark);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;
   }
 
+  /* ANALYTICAL THOUGHTS */
+  .th-strip{display:flex;height:5px;border-radius:14px 14px 0 0;overflow:hidden;}
+  .th-strip span{flex:1;}
+  .th-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .15s;}
+  .th-card:hover{transform:translateY(-3px);}
+  .th-card-body{padding:18px 20px;}
+  .th-card-body h5{font-size:15px;font-weight:600;margin-bottom:4px;}
+  .th-card-body p{font-size:12.5px;color:var(--text-mute);}
+  .th-modal{position:fixed;inset:0;background:rgba(20,18,58,0.55);display:none;align-items:center;justify-content:center;z-index:100;padding:20px;}
+  .th-modal.open{display:flex;}
+  .th-modal-inner{background:#fff;border-radius:14px;width:100%;max-width:960px;overflow:hidden;}
+  .th-modal-head{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;border-bottom:1px solid var(--border);}
+  .th-modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-soft);}
+  .th-modal-inner iframe{width:100%;height:70vh;border:none;display:block;}
+  .th-empty{color:var(--text-mute);font-size:14px;text-align:center;padding:30px;grid-column:1/-1;}
+
   /* CONTACT / FOOTER */
   footer{padding:60px 0 40px;text-align:center;}
   footer h2{font-size:28px;font-weight:700;margin-bottom:10px;}
@@ -166,6 +187,7 @@
       <li><a href="#experience">Experience</a></li>
       <li><a href="#skills">Skills</a></li>
       <li><a href="#achievements">Achievements</a></li>
+      <li><a href="#thoughts">Thoughts</a></li>
       <li><a href="#contact">Contact</a></li>
     </ul>
     <a class="nav-cta" href="mailto:almas.razin.official@gmail.com">Let's talk</a>
@@ -335,6 +357,27 @@
   </div>
 </section>
 
+<section class="section" id="thoughts">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">Writing</div>
+      <h2>Analytical <span>thoughts</span></h2>
+      <p>Short slide breakdowns on operations, automation and market patterns — drop a new PPTX in the repo and it shows up here.</p>
+    </div>
+    <div class="grid-3" id="th-grid" style="grid-template-columns:repeat(3,1fr);"></div>
+  </div>
+</section>
+
+<div class="th-modal" id="th-modal">
+  <div class="th-modal-inner">
+    <div class="th-modal-head">
+      <h5 id="th-modal-title" style="font-size:14px;font-weight:600;"></h5>
+      <button class="th-modal-close" id="th-modal-close">&times;</button>
+    </div>
+    <iframe id="th-modal-frame" src=""></iframe>
+  </div>
+</div>
+
 <footer id="contact">
   <div class="wrap">
     <h2>Let's work together</h2>
@@ -348,6 +391,52 @@
     <p class="copyright">© 2026 Syed Almas Uddin Razin · Dhaka, Bangladesh</p>
   </div>
 </footer>
+
+<script>
+(function(){
+  const owner='AlmasUddinRazin', repo='Almas-Uddin-Razin-portfolio', branch='main', folder='thoughts';
+  const grid=document.getElementById('th-grid');
+  const modal=document.getElementById('th-modal');
+  const frame=document.getElementById('th-modal-frame');
+  const modalTitle=document.getElementById('th-modal-title');
+
+  function openThought(title, rawUrl){
+    modalTitle.textContent=title;
+    frame.src='https://view.officeapps.live.com/op/embed.aspx?src='+encodeURIComponent(rawUrl);
+    modal.classList.add('open');
+  }
+  document.getElementById('th-modal-close').addEventListener('click',()=>{
+    modal.classList.remove('open'); frame.src='';
+  });
+  modal.addEventListener('click',(e)=>{
+    if(e.target===modal){ modal.classList.remove('open'); frame.src=''; }
+  });
+
+  fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${folder}?ref=${branch}`)
+    .then(r=>r.ok?r.json():[])
+    .then(files=>{
+      const decks=Array.isArray(files)?files.filter(f=>f.name.toLowerCase().endsWith('.pptx')):[];
+      if(!decks.length){ grid.innerHTML='<p class="th-empty">New decks will appear here once uploaded.</p>'; return; }
+      decks.sort((a,b)=>b.name.localeCompare(a.name));
+      grid.innerHTML='';
+      decks.forEach(f=>{
+        const base=f.name.replace(/\.pptx$/i,'');
+        const dateMatch=base.match(/^(\d{4}-\d{2}-\d{2})[-_]?(.*)$/);
+        const dateStr=dateMatch?dateMatch[1]:'';
+        const titleRaw=dateMatch?dateMatch[2]:base;
+        const title=(titleRaw.replace(/[-_]+/g,' ').replace(/\b\w/g,c=>c.toUpperCase())) || 'Untitled';
+        const rawUrl=`https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${folder}/${f.name}`;
+        const card=document.createElement('div');
+        card.className='th-card';
+        card.innerHTML=`<div class="th-strip"><span style="background:var(--th-navy)"></span><span style="background:var(--th-purple)"></span><span style="background:var(--th-indigo)"></span><span style="background:var(--th-pink)"></span><span style="background:var(--th-lav)"></span></div>
+          <div class="th-card-body"><h5>${title}</h5><p>${dateStr||'Analytical thoughts'}</p></div>`;
+        card.addEventListener('click',()=>openThought(title,rawUrl));
+        grid.appendChild(card);
+      });
+    })
+    .catch(()=>{ grid.innerHTML='<p class="th-empty">Couldn\'t load decks right now.</p>'; });
+})();
+</script>
 
 </body>
 </html>
